@@ -25,6 +25,8 @@ flags.DEFINE_string("save_path", None,
                     "Model output directory.")
 flags.DEFINE_bool("use_lpf", True,
                   "Whether to use low pass filter.")
+flags.DEFINE_bool("all_feat", True,
+                  "Whether to use all features.")
 flags.DEFINE_integer("num_epoch", 5,
                      "Number of epochs.")
 flags.DEFINE_integer("batch_size", 4,
@@ -33,13 +35,20 @@ flags.DEFINE_integer("batch_size", 4,
 FLAGS = flags.FLAGS
 
 
+def feat_size(all_feat=True):
+    if all_feat:
+        return 12
+    else:
+        return 3
+
+
 class CrossingMetrics(object):
-    def __init__(self, row):
+    def __init__(self, row, all_feat=True):
         self.track = row[0]
         self.timestamp = row[1]
-        self.origin_metrics = row[2:14]
-        self.reset_metrics = row[14:26]
-        self.filtered_metrics = row[26:38]
+        self.origin_metrics = row[2:2 + feat_size(all_feat)]
+        self.reset_metrics = row[14:14 + feat_size(all_feat)]
+        self.filtered_metrics = row[26:26 + feat_size(all_feat)]
 
 
 class CrossingGuide(object):
@@ -50,6 +59,7 @@ class CrossingGuide(object):
         self.batch_size = conf.get('batch_size', 128)
         self.use_lpf = conf.get("use_lpf", True)
         self.save_path = conf.get("save_path", "model.h5")
+        self.all_feat = conf.get("all_feat", True)
 
         self.image_shape = conf.get('image_shape', (352, 288, 3))
 
@@ -84,7 +94,7 @@ class CrossingGuide(object):
         model.add(Dropout(self.dropout_rate))
         model.add(Dense(64, activation=self.activation))
         model.add(Dropout(self.dropout_rate))
-        model.add(Dense(12, activation='softmax'))
+        model.add(Dense(feat_size(self.all_feat), activation='softmax'))
 
         model.compile(loss='mse', optimizer='adam')
 
@@ -138,7 +148,7 @@ class CrossingGuide(object):
 
 def main(_):
     print(FLAGS.__dict__['__flags'])
-    guide = CrossingGuide(data_path=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size)
+    guide = CrossingGuide(data_path=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size, all_feat=FLAGS.all_feat)
     guide.train(FLAGS.num_epoch)
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@ flags.DEFINE_string("save_path", None,
                     "Model output directory.")
 flags.DEFINE_bool("use_lpf", True,
                   "Whether to use low pass filter.")
-flags.DEFINE_integer("num_epochs", 5,
+flags.DEFINE_integer("num_epoch", 5,
                      "Number of epochs.")
 flags.DEFINE_integer("batch_size", 4,
                      "Number of samples in a batch.")

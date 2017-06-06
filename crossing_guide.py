@@ -104,7 +104,7 @@ class CrossingGuide(object):
         root = Path(self.data_dir)
         with open("./processed.csv", "r") as f:
             reader = csv.reader(f)
-            metrics = [CrossingMetrics(row) for row in reader]
+            metrics = [CrossingMetrics(row, self.all_feat) for row in reader]
 
         logging.info("{} sample found.".format(len(metrics)))
         ts_train, ts_valid = train_test_split(metrics, test_size=0.2)

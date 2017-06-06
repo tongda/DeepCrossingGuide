@@ -1,0 +1,7 @@
+*.h5
+.DS_Store
+.vscode/
+data
+logs
+.ipynb_checkpoints/
+__pycache__

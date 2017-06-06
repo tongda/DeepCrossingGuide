@@ -1,25 +1,20 @@
+import csv
 import logging
 from pathlib import Path
 from struct import unpack
 
+import numpy as np
+import tensorflow as tf
 from keras import activations
-from keras.callbacks import ProgbarLogger, TensorBoard
+from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
                           Dropout, Flatten, Lambda, MaxPooling2D)
 from keras.models import Sequential, load_model
-from keras.callbacks import Callback
-
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
 import cv2
-
-import numpy as np
-
 from util import read_image, read_metrics
-import csv
-
-import tensorflow as tf
 
 flags = tf.flags
 logging = tf.logging
@@ -30,6 +25,10 @@ flags.DEFINE_string("save_path", None,
                     "Model output directory.")
 flags.DEFINE_bool("use_lpf", True,
                   "Whether to use low pass filter.")
+flags.DEFINE_integer("num_epochs", 5,
+                     "Number of epochs.")
+flags.DEFINE_integer("batch_size", 4,
+                     "Number of samples in a batch.")
 
 FLAGS = flags.FLAGS
 
@@ -76,7 +75,7 @@ class CrossingGuide(object):
         model.add(Conv2D(64, (3, 3), padding='same',
                          activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(MaxPooling2D())
-        model.add(Conv2D(64, (3, 3), padding='same',
+        model.add(Conv2D(128, (3, 3), padding='same',
                          activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(MaxPooling2D())
         model.add(Dropout(self.dropout_rate))
@@ -139,8 +138,8 @@ class CrossingGuide(object):
 
 def main(_):
     print(FLAGS.__dict__['__flags'])
-    guide = CrossingGuide(data_path=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=4)
-    guide.train(5)
+    guide = CrossingGuide(data_path=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size)
+    guide.train(FLAGS.num_epoch)
 
 if __name__ == "__main__":
     tf.app.run()

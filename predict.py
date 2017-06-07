@@ -1,5 +1,6 @@
 import argparse
 import math
+import time
 from pathlib import Path
 
 import numpy as np
@@ -15,6 +16,8 @@ def create_parser():
                         help="Model path.")
     parser.add_argument("--all-feat", dest="all_feat", action="store_true",
                         help="Whether to use all features.")
+    parser.add_argument("--output-dir", dest="output_dir", type=str, default="test_output",
+                        help="Directory of output images.")
     return parser
 
 
@@ -43,14 +46,17 @@ def main(conf):
     guide = CrossingGuide(save_path=conf.model)
     guide.load()
 
-    output_dir = Path("test_output")
+    output_dir = Path(conf.output_dir)
     output_dir.mkdir(exist_ok=True)
 
+    proc_times = []
     for f in root.glob("*.jpg"):
         if ts_range[1] > int(f.stem) > ts_range[0]:
             img = cv2.imread(str(f))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            cur_time = time.time()
             prediction = guide.predict(img)
+            proc_times.append(time.time() - cur_time)
             output = cv2.putText(
                 img,
                 "{0[0]:.2}, {0[1]:.2}, {0[2]:.2}".format(prediction[0]),
@@ -75,6 +81,7 @@ def main(conf):
             output = draw_arrow(output, mid, target, (255, 0, 0), 10, 2)
             cv2.imwrite(str(output_dir / "{}-predicted.jpg").format(f.stem),
                         cv2.cvtColor(output, cv2.COLOR_RGB2BGR))
+    print("Finished. Average processing time per image: {:.2f} ms".format(sum(proc_times) / len(proc_times) * 1000))
 
 
 if __name__ == "__main__":

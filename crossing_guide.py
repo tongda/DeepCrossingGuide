@@ -116,7 +116,7 @@ class CrossingGuide(object):
                 for offset in range(0, len(samples), self.batch_size):
                     batch_metrics = samples[offset:offset + self.batch_size]
                     images = np.array(
-                        [read_image(root / "{}.jpg".format(metric.timestamp)) for metric in batch_metrics])
+                        [read_image(next(root.rglob("{}.jpg".format(metric.timestamp)))) for metric in batch_metrics])
                     metrics = np.array(
                         [metric.filtered_metrics if self.use_lpf else metric.origin_metrics for metric in batch_metrics])
                     yield images, metrics

@@ -151,7 +151,7 @@ class CrossingGuide(object):
 
 def main(_):
     print(FLAGS.__dict__['__flags'])
-    guide = CrossingGuide(data_path=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size, all_feat=FLAGS.all_feat, activation='tanh')
+    guide = CrossingGuide(data_dir=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size, all_feat=FLAGS.all_feat, activation='tanh')
     guide.train(FLAGS.num_epoch)
 
 if __name__ == "__main__":

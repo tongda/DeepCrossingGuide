@@ -51,6 +51,8 @@ def main():
     parser = argparse.ArgumentParser(description='Preprocess Data.')
     parser.add_argument('--root', dest='root',
                         required=True, help='root path of data')
+    parser.add_argument('--output', dest='output', default='processed.csv',
+                        required=False, help='output path of processed data')
     args = parser.parse_args()
     root = Path(args.root)
     preprocess(root)

@@ -128,6 +128,7 @@ class CrossingGuide(object):
     def train(self, num_epoch):
         self.load_data()
         logname = '-'.join(['dr' + str(self.dropout_rate),
+                            'lpf' + str(self.use_lpf),
                             'ep' + str(num_epoch), activations.serialize(self.activation)])
 
         tfboard = TensorBoard('./logs/' + logname,

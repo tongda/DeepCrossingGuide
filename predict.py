@@ -1,9 +1,21 @@
+import argparse
+import math
+from pathlib import Path
+
+import numpy as np
 from moviepy.editor import VideoFileClip
+
 import cv2
 from crossing_guide import CrossingGuide
-from pathlib import Path
-import math
-import numpy as np
+
+
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", dest="model", type=str,
+                        help="Model path.")
+    parser.add_argument("--all-feat", dest="all_feat", action="store_true",
+                        help="Whether to use all features.")
+    return parser
 
 
 def draw_arrow(image, p, q, color, arrowMagnitude=9, thickness=1, line_type=8, shift=0):
@@ -25,10 +37,10 @@ def draw_arrow(image, p, q, color, arrowMagnitude=9, thickness=1, line_type=8, s
     return output
 
 
-def main(_):
+def main(conf):
     root = Path("./data/0524")
     ts_range = (149548990624, 149548992008)
-    guide = CrossingGuide()
+    guide = CrossingGuide(save_path=conf.model)
     guide.load()
 
     output_dir = Path("test_output")
@@ -43,18 +55,19 @@ def main(_):
                 img,
                 "{0[0]:.2}, {0[1]:.2}, {0[2]:.2}".format(prediction[0]),
                 (10, 15), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
-            output = cv2.putText(
-                output,
-                "{0[3]:.2}, {0[4]:.2}, {0[5]:.2}".format(prediction[0]),
-                (10, 30), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
-            output = cv2.putText(
-                output,
-                "{0[6]:.2}, {0[7]:.2}, {0[8]:.2}".format(prediction[0]),
-                (10, 45), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
-            output = cv2.putText(
-                output,
-                "{0[9]:.2}, {0[10]:.2}, {0[11]:.2}".format(prediction[0]),
-                (10, 60), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
+            if conf.all_feat:
+                output = cv2.putText(
+                    output,
+                    "{0[3]:.2}, {0[4]:.2}, {0[5]:.2}".format(prediction[0]),
+                    (10, 30), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
+                output = cv2.putText(
+                    output,
+                    "{0[6]:.2}, {0[7]:.2}, {0[8]:.2}".format(prediction[0]),
+                    (10, 45), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
+                output = cv2.putText(
+                    output,
+                    "{0[9]:.2}, {0[10]:.2}, {0[11]:.2}".format(prediction[0]),
+                    (10, 60), fontFace=cv2.FONT_HERSHEY_PLAIN, fontScale=1.2, color=(0, 255, 0), thickness=2)
             mid = (img.shape[1] // 2, img.shape[0] // 2)
             arrow_length = 100
             target = (int(img.shape[1] // 2 - arrow_length * math.sin(prediction[0][1])), int(
@@ -65,4 +78,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    main(None)
+    parser = create_parser()
+    conf = parser.parse_args()
+    main(conf)

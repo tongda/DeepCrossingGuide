@@ -94,6 +94,7 @@ class CrossingGuide(object):
         model.add(Dropout(self.dropout_rate))
         model.add(Dense(64, activation=self.activation))
         model.add(Dropout(self.dropout_rate))
+        model.add(Dense(16))
         model.add(Dense(feat_size(self.all_feat)))
 
         model.compile(loss='mse', optimizer='adam')

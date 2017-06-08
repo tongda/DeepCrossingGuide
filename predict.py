@@ -4,7 +4,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-from moviepy.editor import VideoFileClip
 
 import cv2
 from crossing_guide import CrossingGuide

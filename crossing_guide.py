@@ -89,13 +89,24 @@ class CrossingGuide(object):
                          activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(MaxPooling2D())
         model.add(Dropout(self.dropout_rate))
+        model.add(Conv2D(128, (11, 9), padding='valid',
+                         activation=self.activation, kernel_initializer='glorot_normal'))
+        model.add(Dropout(self.dropout_rate))
+        model.add(Conv2D(64, (1, 1), padding='valid',
+                         activation=self.activation, kernel_initializer='glorot_normal'))
+        model.add(Dropout(self.dropout_rate))
+        model.add(Conv2D(16, (1, 1), padding='valid',
+                         activation=self.activation, kernel_initializer='glorot_normal'))
+        model.add(Conv2D(feat_size(self.all_feat), (1, 1), padding='valid',
+                         activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(Flatten())
-        model.add(Dense(128, activation=self.activation))
-        model.add(Dropout(self.dropout_rate))
-        model.add(Dense(64, activation=self.activation))
-        model.add(Dropout(self.dropout_rate))
-        model.add(Dense(16, activation=self.activation))
-        model.add(Dense(feat_size(self.all_feat)))
+        # model.add(Flatten())
+        # model.add(Dense(128, activation=self.activation))
+        # model.add(Dropout(self.dropout_rate))
+        # model.add(Dense(64, activation=self.activation))
+        # model.add(Dropout(self.dropout_rate))
+        # model.add(Dense(16, activation=self.activation))
+        # model.add(Dense(feat_size(self.all_feat)))
 
         model.compile(loss='mse', optimizer='adam')
 

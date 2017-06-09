@@ -145,8 +145,9 @@ class CrossingGuide(object):
             validation_data=self._valid_data_generator,
             validation_steps=self._valid_size / self.batch_size,
             epochs=num_epoch, verbose=True,
+            workers=10,
             callbacks=[tfboard],
-            max_q_size=50)
+            max_q_size=200)
 
         self.model.save(self.save_path)
 

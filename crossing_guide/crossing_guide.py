@@ -134,6 +134,9 @@ class CrossingGuide(object):
         ts_train, ts_valid = train_test_split(
             metrics, test_size=self.valid_ratio)
 
+        metrics_flip_cache = np.ones(
+            (self.batch_size, feat_size(all_feat=self.all_feat)))
+
         @threadsafe_generator
         def generator(samples):
             while True:
@@ -141,11 +144,9 @@ class CrossingGuide(object):
                     shuffle(samples)
                 for offset in range(0, len(samples), self.batch_size):
                     batch_metrics = samples[offset:offset + self.batch_size]
-                    flips = [random.random() > 0.5 for _ in range(
-                        len(batch_metrics))]
-                    metrics_flip_array = np.ones(
-                        (len(batch_metrics), feat_size(all_feat=self.all_feat)))
-                    metrics_flip_array[:, 1] = np.array(flips) * 2 - 1
+                    flips = np.random.choice([-1, 1], len(batch_metrics))
+                    metrics_flip_array = metrics_flip_cache[:len(batch_metrics)]
+                    metrics_flip_array[:, 1] = flips * 2 - 1
                     images = np.array(
                         [read_image(
                             next(root.rglob("{}.jpg".format(metric.timestamp))),

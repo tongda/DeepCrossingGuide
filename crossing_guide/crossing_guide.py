@@ -146,7 +146,7 @@ class CrossingGuide(object):
                     batch_metrics = samples[offset:offset + self.batch_size]
                     flips = np.random.choice([-1, 1], len(batch_metrics))
                     metrics_flip_array = metrics_flip_cache[:len(batch_metrics)]
-                    metrics_flip_array[:, 1] = flips * 2 - 1
+                    metrics_flip_array[:, 1] = flips
                     images = np.array(
                         [read_image(
                             next(root.rglob("{}.jpg".format(metric.timestamp))),

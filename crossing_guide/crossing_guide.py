@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from struct import unpack
+import random
 
 import numpy as np
 import tensorflow as tf
@@ -13,28 +13,7 @@ from keras.models import Sequential, load_model
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-import cv2
-from util import read_image, read_metrics
-
-flags = tf.flags
-logging = tf.logging
-
-flags.DEFINE_string("data_dir", None,
-                    "Where the training/test data is stored.")
-flags.DEFINE_string("save_path", None,
-                    "Model output directory.")
-flags.DEFINE_string("piece_file", None,
-                    "Model output directory.")
-flags.DEFINE_bool("use_lpf", True,
-                  "Whether to use low pass filter.")
-flags.DEFINE_bool("all_feat", True,
-                  "Whether to use all features.")
-flags.DEFINE_integer("num_epoch", 5,
-                     "Number of epochs.")
-flags.DEFINE_integer("batch_size", 4,
-                     "Number of samples in a batch.")
-
-FLAGS = flags.FLAGS
+from .util import read_image, read_metrics
 
 
 def feat_size(all_feat=True):
@@ -46,11 +25,11 @@ def feat_size(all_feat=True):
 
 class CrossingMetrics(object):
     def __init__(self, row, all_feat=True):
-        self.track = row[0]
-        self.timestamp = row[1]
-        self.origin_metrics = row[2:2 + feat_size(all_feat)]
-        self.reset_metrics = row[14:14 + feat_size(all_feat)]
-        self.filtered_metrics = row[26:26 + feat_size(all_feat)]
+        self.track = int(row[0])
+        self.timestamp = int(row[1])
+        self.origin_metrics = list(map(float, row[2:2 + feat_size(all_feat)]))
+        self.reset_metrics = list(map(float, row[14:14 + feat_size(all_feat)]))
+        self.filtered_metrics = list(map(float, row[26:26 + feat_size(all_feat)]))
 
 
 class CrossingGuide(object):
@@ -63,6 +42,7 @@ class CrossingGuide(object):
         self.save_path = conf.get("save_path", "model.h5")
         self.all_feat = conf.get("all_feat", True)
         self.piece_file = conf.get("piece_file", "processed.csv")
+        self.valid_ratio = conf.get("valid_ratio", 0.2)
 
         self.image_shape = conf.get('image_shape', (352, 288, 3))
 
@@ -115,24 +95,37 @@ class CrossingGuide(object):
 
         return model
 
-    def load_data(self):
+    def load_data(self, need_shuffle=True):
         root = Path(self.data_dir)
         with open(self.piece_file, "r") as f:
             reader = csv.reader(f)
             metrics = [CrossingMetrics(row, self.all_feat) for row in reader]
 
         logging.info("{} sample found.".format(len(metrics)))
-        ts_train, ts_valid = train_test_split(metrics, test_size=0.2)
+        ts_train, ts_valid = train_test_split(metrics, test_size=self.valid_ratio)
 
         def generator(samples):
             while True:
-                shuffle(samples)
+                if need_shuffle:
+                    shuffle(samples)
                 for offset in range(0, len(samples), self.batch_size):
                     batch_metrics = samples[offset:offset + self.batch_size]
+                    flips = [random.random() > 0.5 for _ in range(
+                        self.batch_size)]
+                    metrics_flip_array = np.ones(
+                        (self.batch_size, feat_size(all_feat=self.all_feat)))
+                    metrics_flip_array[:, 1] = np.array(flips) * 2 - 1
                     images = np.array(
-                        [read_image(next(root.rglob("{}.jpg".format(metric.timestamp)))) for metric in batch_metrics])
+                        [read_image(
+                            next(root.rglob("{}.jpg".format(metric.timestamp))),
+                            flip=flip
+                        ) for metric, flip in zip(batch_metrics, flips)]
+                    )
                     metrics = np.array(
-                        [metric.filtered_metrics if self.use_lpf else metric.origin_metrics for metric in batch_metrics])
+                        [metric.filtered_metrics if self.use_lpf else metric.origin_metrics
+                         for metric in batch_metrics]
+                    )
+                    metrics *= metrics_flip_array
                     yield images, metrics
         self._train_data_generator = generator(ts_train)
         self._train_size = len(ts_train)
@@ -162,19 +155,3 @@ class CrossingGuide(object):
 
     def predict(self, image):
         return self.model.predict(np.expand_dims(image, 0), batch_size=1)
-
-
-def main(_):
-    print(FLAGS.__dict__['__flags'])
-    guide = CrossingGuide(data_dir=FLAGS.data_dir,
-                          save_path=FLAGS.save_path,
-                          use_lpf=FLAGS.use_lpf,
-                          batch_size=FLAGS.batch_size,
-                          all_feat=FLAGS.all_feat,
-                          piece_file=FLAGS.piece_File,
-                          activation='tanh')
-    guide.train(FLAGS.num_epoch)
-
-
-if __name__ == "__main__":
-    tf.app.run()

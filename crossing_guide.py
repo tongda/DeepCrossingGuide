@@ -23,6 +23,8 @@ flags.DEFINE_string("data_dir", None,
                     "Where the training/test data is stored.")
 flags.DEFINE_string("save_path", None,
                     "Model output directory.")
+flags.DEFINE_string("piece_file", None,
+                    "Model output directory.")
 flags.DEFINE_bool("use_lpf", True,
                   "Whether to use low pass filter.")
 flags.DEFINE_bool("all_feat", True,
@@ -60,6 +62,7 @@ class CrossingGuide(object):
         self.use_lpf = conf.get("use_lpf", True)
         self.save_path = conf.get("save_path", "model.h5")
         self.all_feat = conf.get("all_feat", True)
+        self.piece_file = conf.get("piece_file", "processed.csv")
 
         self.image_shape = conf.get('image_shape', (352, 288, 3))
 
@@ -114,7 +117,7 @@ class CrossingGuide(object):
 
     def load_data(self):
         root = Path(self.data_dir)
-        with open("./processed.csv", "r") as f:
+        with open(self.piece_file, "r") as f:
             reader = csv.reader(f)
             metrics = [CrossingMetrics(row, self.all_feat) for row in reader]
 
@@ -160,10 +163,18 @@ class CrossingGuide(object):
     def predict(self, image):
         return self.model.predict(np.expand_dims(image, 0), batch_size=1)
 
+
 def main(_):
     print(FLAGS.__dict__['__flags'])
-    guide = CrossingGuide(data_dir=FLAGS.data_dir, save_path=FLAGS.save_path, use_lpf=FLAGS.use_lpf, batch_size=FLAGS.batch_size, all_feat=FLAGS.all_feat, activation='tanh')
+    guide = CrossingGuide(data_dir=FLAGS.data_dir,
+                          save_path=FLAGS.save_path,
+                          use_lpf=FLAGS.use_lpf,
+                          batch_size=FLAGS.batch_size,
+                          all_feat=FLAGS.all_feat,
+                          piece_file=FLAGS.piece_File,
+                          activation='tanh')
     guide.train(FLAGS.num_epoch)
+
 
 if __name__ == "__main__":
     tf.app.run()

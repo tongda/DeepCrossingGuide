@@ -1,7 +1,9 @@
 import csv
+import functools
 import logging
-from pathlib import Path
 import random
+import threading
+from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
@@ -29,7 +31,34 @@ class CrossingMetrics(object):
         self.timestamp = int(row[1])
         self.origin_metrics = list(map(float, row[2:2 + feat_size(all_feat)]))
         self.reset_metrics = list(map(float, row[14:14 + feat_size(all_feat)]))
-        self.filtered_metrics = list(map(float, row[26:26 + feat_size(all_feat)]))
+        self.filtered_metrics = list(
+            map(float, row[26:26 + feat_size(all_feat)]))
+
+
+class threadsafe_iter(object):
+    """Takes an iterator/generator and makes it thread-safe by
+    serializing call to the `next` method of given iterator/generator.
+    """
+
+    def __init__(self, it):
+        self.it = it
+        self.lock = threading.Lock()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with self.lock:
+            return self.it.next()
+
+
+def threadsafe_generator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    @functools.wraps(f)
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
 
 
 class CrossingGuide(object):
@@ -102,8 +131,10 @@ class CrossingGuide(object):
             metrics = [CrossingMetrics(row, self.all_feat) for row in reader]
 
         logging.info("{} sample found.".format(len(metrics)))
-        ts_train, ts_valid = train_test_split(metrics, test_size=self.valid_ratio)
+        ts_train, ts_valid = train_test_split(
+            metrics, test_size=self.valid_ratio)
 
+        @threadsafe_generator
         def generator(samples):
             while True:
                 if need_shuffle:

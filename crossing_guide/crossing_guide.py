@@ -49,7 +49,7 @@ class threadsafe_iter(object):
 
     def __next__(self):
         with self.lock:
-            return self.it.next()
+            return next(self.it)
 
 
 def threadsafe_generator(f):

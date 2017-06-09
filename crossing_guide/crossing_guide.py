@@ -111,9 +111,9 @@ class CrossingGuide(object):
                 for offset in range(0, len(samples), self.batch_size):
                     batch_metrics = samples[offset:offset + self.batch_size]
                     flips = [random.random() > 0.5 for _ in range(
-                        self.batch_size)]
+                        len(batch_metrics))]
                     metrics_flip_array = np.ones(
-                        (self.batch_size, feat_size(all_feat=self.all_feat)))
+                        (len(batch_metrics), feat_size(all_feat=self.all_feat)))
                     metrics_flip_array[:, 1] = np.array(flips) * 2 - 1
                     images = np.array(
                         [read_image(

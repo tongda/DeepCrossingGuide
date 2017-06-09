@@ -5,9 +5,9 @@ import scipy.ndimage as ndi
 import numpy as np
 
 
-def read_image(path: Path, flip=False):
+def read_image(path: Path, flip=1):
     image = ndi.imread(str(path))
-    if flip:
+    if flip == -1:
         image = np.fliplr(image)
     return image
 

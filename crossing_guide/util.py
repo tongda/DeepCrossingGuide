@@ -8,11 +8,9 @@ import cv2
 
 # The flip = 1 means that the metric will multiply 1,
 # which means unchanged. So flip = -1 will flip the image.
-def read_image(path: Path, flip=1):
+def read_image(path: Path):
     image = cv2.imread(str(path))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    if flip == -1:
-        image = np.fliplr(image)
     return image
 
 

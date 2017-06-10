@@ -3,7 +3,9 @@ import functools
 import logging
 import random
 import threading
+from multiprocessing.pool import Pool
 from pathlib import Path
+from itertools import repeat
 
 import numpy as np
 import tensorflow as tf
@@ -33,6 +35,66 @@ class CrossingMetrics(object):
         self.reset_metrics = list(map(float, row[14:14 + feat_size(all_feat)]))
         self.filtered_metrics = list(
             map(float, row[26:26 + feat_size(all_feat)]))
+
+
+class ImageGenerator(object):
+    def __init__(self,
+                 root_dir,
+                 use_lpf=False,
+                 random_flip=False,
+                 view_type="PORTRAIT"):
+        self.root_dir = Path(root_dir)
+        self.random_flip = random_flip
+        self.use_lpf = use_lpf
+        self.view_type = view_type
+
+    def generate(self, raw_metric):
+        image = read_image(next(self.root_dir.rglob(
+            "{}.jpg".format(raw_metric.timestamp))))
+        result_metric = raw_metric.filtered_metrics if self.use_lpf else raw_metric.origin_metrics
+        if self.random_flip and random.random() > 0.5:
+            image = np.fliplr(image)
+            view_index = 1 if self.view_type == "PORTRAIT" else 0
+            result_metric[view_index] *= -1
+        return image, result_metric
+
+
+class BatchIterator(object):
+    def __init__(self,
+                 root_dir,
+                 metrics,
+                 batch_size,
+                 worker_pool: Pool,
+                 use_lpf=False,
+                 random_flip=False,
+                 view_type="PORTRAIT",
+                 need_shuffle=True):
+        self.batch_generator = self._flow(metrics, batch_size, need_shuffle)
+        self.root_dir = Path(root_dir)
+        self.random_flip = random_flip
+        self.worker_pool = worker_pool
+        self.use_lpf = use_lpf
+        self.view_type = view_type
+        self.generator = ImageGenerator(
+            root_dir, use_lpf, random_flip, view_type)
+
+    def _flow(self, samples, batch_size, need_shuffle):
+        while True:
+            if need_shuffle:
+                shuffle(samples)
+            for offset in range(0, len(samples), batch_size):
+                batch_metrics = samples[offset:offset + batch_size]
+                yield batch_metrics
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        batch_metrics = next(self.batch_generator)
+        batch_pairs = self.worker_pool.map(
+            self.generator.generate, batch_metrics)
+        images, metrics = zip(*batch_pairs)
+        return np.array(images), np.array(metrics)
 
 
 class threadsafe_iter(object):
@@ -78,6 +140,7 @@ class CrossingGuide(object):
         logging.info("Batch Size: {}".format(self.batch_size))
 
         self.model = self.build_model()
+        self.worker_pool = Pool(processes=conf.get("process_pool_size", 4))
 
     def build_model(self):
         model = Sequential()
@@ -134,34 +197,19 @@ class CrossingGuide(object):
         ts_train, ts_valid = train_test_split(
             metrics, test_size=self.valid_ratio)
 
-        metrics_flip_cache = np.ones(
-            (self.batch_size, feat_size(all_feat=self.all_feat)))
-
-        @threadsafe_generator
-        def generator(samples):
-            while True:
-                if need_shuffle:
-                    shuffle(samples)
-                for offset in range(0, len(samples), self.batch_size):
-                    batch_metrics = samples[offset:offset + self.batch_size]
-                    flips = np.random.choice([-1, 1], len(batch_metrics))
-                    metrics_flip_array = metrics_flip_cache[:len(batch_metrics)]
-                    metrics_flip_array[:, 1] = flips
-                    images = np.array(
-                        [read_image(
-                            next(root.rglob("{}.jpg".format(metric.timestamp))),
-                            flip=flip
-                        ) for metric, flip in zip(batch_metrics, flips)]
-                    )
-                    metrics = np.array(
-                        [metric.filtered_metrics if self.use_lpf else metric.origin_metrics
-                         for metric in batch_metrics]
-                    )
-                    metrics *= metrics_flip_array
-                    yield images, metrics
-        self._train_data_generator = generator(ts_train)
+        def create_iterator(dataset):
+            return BatchIterator(
+                self.data_dir,
+                dataset,
+                self.batch_size,
+                self.worker_pool,
+                self.use_lpf,
+                random_flip=True,
+                view_type="PORTRAIT",
+                need_shuffle=need_shuffle)
+        self._train_data_generator = create_iterator(ts_train)
         self._train_size = len(ts_train)
-        self._valid_data_generator = generator(ts_valid)
+        self._valid_data_generator = create_iterator(ts_valid)
         self._valid_size = len(ts_valid)
 
     def train(self, num_epoch):

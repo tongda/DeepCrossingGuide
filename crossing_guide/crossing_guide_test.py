@@ -2,8 +2,9 @@ import unittest
 from pathlib import Path
 import numpy as np
 import csv
+from multiprocessing.pool import Pool
 
-from .crossing_guide import CrossingGuide, CrossingMetrics
+from .crossing_guide import CrossingGuide, CrossingMetrics, BatchIterator
 from .util import read_image
 
 
@@ -14,6 +15,30 @@ def is_image_flipped(image1, image2):
 def is_metric_flipped(metric1, metric2):
     return metric1[1] == -metric2[1]
 
+
+class BatchItoratorTest(unittest.TestCase):
+    def test_should_return_batches(self):
+        data_dir = "./data"
+        piece_file = "./crossing_guide/test-piece.csv"
+
+        with open(piece_file, 'r') as f:
+            reader = csv.reader(f)
+            raw_metrics = [CrossingMetrics(row) for row in reader]
+
+        with Pool(5) as pool:
+            iterator = BatchIterator(data_dir, raw_metrics, 2, pool)
+            images, metrics = next(iterator)
+
+        root = Path(data_dir)
+        image_mapping = {metric.origin_metrics[0]: read_image(
+            next(root.rglob("{}.jpg".format(metric.timestamp)))) for metric in raw_metrics}
+
+        # check size
+        self.assertEqual(images.shape, (2, 352, 288, 3))
+        self.assertEqual(metrics.shape, (2, 12))
+        # check order
+        for met, img in zip(metrics, images):
+            self.assertTrue(np.array_equal(image_mapping[met[0]], img))
 
 class CrossingGuideTest(unittest.TestCase):
     def test_should_generate_fliped_images(self):

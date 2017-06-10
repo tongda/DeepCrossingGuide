@@ -18,6 +18,8 @@ flags.DEFINE_integer("num_epoch", 5,
                      "Number of epochs.")
 flags.DEFINE_integer("batch_size", 4,
                      "Number of samples in a batch.")
+flags.DEFINE_integer("process_pool_size", 4,
+                     "Number of samples in a batch.")
 
 FLAGS = flags.FLAGS
 
@@ -30,7 +32,8 @@ def main(_):
                           batch_size=FLAGS.batch_size,
                           all_feat=FLAGS.all_feat,
                           piece_file=FLAGS.piece_file,
-                          activation='tanh')
+                          activation='tanh',
+                          process_pool_size=FLAGS.process_pool_size)
     guide.train(FLAGS.num_epoch)
 
 

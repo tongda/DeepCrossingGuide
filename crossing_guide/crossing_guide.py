@@ -79,6 +79,7 @@ class BatchIterator(object):
         self.view_type = view_type
         self.generator = ImageGenerator(
             root_dir, use_lpf, random_flip, view_type)
+        self.lock = threading.Lock()
 
     def _flow(self, samples, batch_size, need_shuffle):
         while True:
@@ -92,7 +93,8 @@ class BatchIterator(object):
         return self
 
     def __next__(self):
-        batch_metrics = next(self.batch_generator)
+        with self.lock:
+            batch_metrics = next(self.batch_generator)
         batch_pairs = self.worker_pool.map(
             self.generator.generate, batch_metrics)
         images, metrics = zip(*batch_pairs)

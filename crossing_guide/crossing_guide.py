@@ -24,7 +24,7 @@ def feat_size(all_feat=True):
     if all_feat:
         return 12
     else:
-        return 3
+        return 2
 
 
 class CrossingMetrics(object):
@@ -54,8 +54,10 @@ class ImageGenerator(object):
         result_metric = raw_metric.filtered_metrics if self.use_lpf else raw_metric.origin_metrics
         if self.random_flip and random.random() > 0.5:
             image = np.fliplr(image)
-            view_index = 1 if self.view_type == "PORTRAIT" else 0
-            result_metric[view_index] *= -1
+            if self.view_type == "PORTRAIT":
+                result_metric[1] *= -1
+            else:
+                result_metric[0] *= -1
         return image, result_metric
 
 

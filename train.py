@@ -20,12 +20,15 @@ flags.DEFINE_integer("batch_size", 4,
                      "Number of samples in a batch.")
 flags.DEFINE_integer("process_pool_size", 4,
                      "Number of samples in a batch.")
+flags.DEFINE_string("orientation", "portrait",
+                    "Model output directory.")
 
 FLAGS = flags.FLAGS
 
 
 def main(_):
     print(FLAGS.__dict__['__flags'])
+    image_shape = (352, 288, 3) if FLAGS.orientation == "portrait" else (288, 352, 3)
     guide = CrossingGuide(data_dir=FLAGS.data_dir,
                           save_path=FLAGS.save_path,
                           use_lpf=FLAGS.use_lpf,
@@ -33,7 +36,8 @@ def main(_):
                           all_feat=FLAGS.all_feat,
                           piece_file=FLAGS.piece_file,
                           activation='tanh',
-                          process_pool_size=FLAGS.process_pool_size)
+                          process_pool_size=FLAGS.process_pool_size,
+                          image_shape=image_shape)
     guide.train(FLAGS.num_epoch)
 
 

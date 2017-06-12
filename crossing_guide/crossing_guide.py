@@ -135,7 +135,7 @@ class CrossingGuide(object):
         self.batch_size = conf.get('batch_size', 128)
         self.use_lpf = conf.get("use_lpf", True)
         self.save_path = conf.get("save_path", "model.h5")
-        self.all_feat = conf.get("all_feat", True)
+        self.all_feat = conf.get("all_feat", False)
         self.piece_file = conf.get("piece_file", "processed.csv")
         self.valid_ratio = conf.get("valid_ratio", 0.2)
 

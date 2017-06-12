@@ -168,7 +168,7 @@ class CrossingGuide(object):
                          activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(MaxPooling2D())
         model.add(Dropout(self.dropout_rate))
-        model.add(Conv2D(128, (11, 9), padding='valid',
+        model.add(Conv2D(128, (self.image_shape[0] / 32, self.image_shape[1] / 32), padding='valid',
                          activation=self.activation, kernel_initializer='glorot_normal'))
         model.add(Dropout(self.dropout_rate))
         model.add(Conv2D(64, (1, 1), padding='valid',

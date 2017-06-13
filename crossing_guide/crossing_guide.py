@@ -1,20 +1,21 @@
 import csv
+import datetime
 import functools
 import logging
 import random
 import threading
+from itertools import repeat
 from multiprocessing.pool import Pool
 from pathlib import Path
-from itertools import repeat
 
 import numpy as np
 import tensorflow as tf
 from keras import activations
+from keras.applications.vgg16 import VGG16, preprocess_input
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
                           Dropout, Flatten, Lambda, MaxPooling2D)
 from keras.models import Model, load_model
-from keras.applications.vgg16 import VGG16, preprocess_input
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
@@ -221,7 +222,10 @@ class CrossingGuide(object):
         self.load_data()
         logname = '-'.join(['dr' + str(self.dropout_rate),
                             'lpf' + str(self.use_lpf),
-                            'ep' + str(num_epoch), activations.serialize(self.activation)])
+                            'ep' +
+                            str(num_epoch), activations.serialize(
+                                self.activation),
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
         tfboard = TensorBoard('./logs/' + logname,
                               histogram_freq=1, write_graph=True)
@@ -265,13 +269,13 @@ class CrossingGuideV2(CrossingGuide):
                    activation=self.activation, kernel_initializer='glorot_normal')(x)
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(64, (1, 1), padding='valid',
-                         activation=self.activation, kernel_initializer='glorot_normal')(x)
+                   activation=self.activation, kernel_initializer='glorot_normal')(x)
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(feat_size(self.all_feat), (1, 1), padding='valid',
-                         activation=None, kernel_initializer='glorot_normal')(x)
+                   activation=None, kernel_initializer='glorot_normal')(x)
         x = Flatten()(x)
 
         model = Model(inputs=vgg.input, outputs=x)
         model.compile(loss='mse', optimizer='adam')
-        
+
         return model

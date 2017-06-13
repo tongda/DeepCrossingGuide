@@ -264,7 +264,7 @@ class CrossingGuideV2(CrossingGuide):
         x = vgg.get_layer('block4_pool').output
 
         x = Dropout(self.dropout_rate)(x)
-        x = Conv2D(128, (self.image_shape[0] // 32, self.image_shape[1] // 32), padding='valid',
+        x = Conv2D(128, (self.image_shape[0] // 16, self.image_shape[1] // 16), padding='valid',
                    activation=self.activation, kernel_initializer='glorot_normal')(x)
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(64, (1, 1), padding='valid',

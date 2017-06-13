@@ -1,5 +1,5 @@
 import tensorflow as tf
-from crossing_guide import CrossingGuide
+from crossing_guide import CrossingGuideV2
 
 flags = tf.flags
 logging = tf.logging
@@ -28,16 +28,17 @@ FLAGS = flags.FLAGS
 
 def main(_):
     print(FLAGS.__dict__['__flags'])
-    image_shape = (352, 288, 3) if FLAGS.orientation == "portrait" else (288, 352, 3)
-    guide = CrossingGuide(data_dir=FLAGS.data_dir,
-                          save_path=FLAGS.save_path,
-                          use_lpf=FLAGS.use_lpf,
-                          batch_size=FLAGS.batch_size,
-                          all_feat=FLAGS.all_feat,
-                          piece_file=FLAGS.piece_file,
-                          activation='tanh',
-                          process_pool_size=FLAGS.process_pool_size,
-                          image_shape=image_shape)
+    image_shape = (352, 288, 3) if FLAGS.orientation == "portrait" else (
+        288, 352, 3)
+    guide = CrossingGuideV2(data_dir=FLAGS.data_dir,
+                            save_path=FLAGS.save_path,
+                            use_lpf=FLAGS.use_lpf,
+                            batch_size=FLAGS.batch_size,
+                            all_feat=FLAGS.all_feat,
+                            piece_file=FLAGS.piece_file,
+                            activation='tanh',
+                            process_pool_size=FLAGS.process_pool_size,
+                            image_shape=image_shape)
     guide.train(FLAGS.num_epoch)
 
 

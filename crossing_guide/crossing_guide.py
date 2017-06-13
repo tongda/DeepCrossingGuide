@@ -13,7 +13,8 @@ from keras import activations
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
                           Dropout, Flatten, Lambda, MaxPooling2D)
-from keras.models import Sequential, load_model
+from keras.models import Model, load_model
+from keras.applications.vgg16 import VGG16, preprocess_input
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
@@ -240,3 +241,37 @@ class CrossingGuide(object):
 
     def predict(self, image):
         return self.model.predict(np.expand_dims(image, 0), batch_size=1)
+
+
+class CrossingGuideV2(CrossingGuide):
+    def __init__(self, *args, **kwargs):
+        super(CrossingGuideV2, self).__init__(*args, **kwargs)
+
+    def build_model(self):
+        vgg = VGG16(
+            include_top=False,
+            weights='imagenet',
+            input_tensor=None,
+            input_shape=(288, 352, 3)
+        )
+
+        for layer in vgg.layers:
+            layer.trainable = False
+
+        x = vgg.output
+
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(128, (self.image_shape[0] // 32, self.image_shape[1] // 32), padding='valid',
+                   activation=self.activation, kernel_initializer='glorot_normal')(x)
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(64, (1, 1), padding='valid',
+                         activation=self.activation, kernel_initializer='glorot_normal')(x)
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(feat_size(self.all_feat), (1, 1), padding='valid',
+                         activation=None, kernel_initializer='glorot_normal')(x)
+        x = Flatten()(x)
+
+        model = Model(inputs=vgg.input, outputs=x)
+        model.compile(loss='mse', optimizer='adam')
+        
+        return model

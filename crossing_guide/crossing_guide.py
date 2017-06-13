@@ -258,10 +258,10 @@ class CrossingGuideV2(CrossingGuide):
             input_shape=(288, 352, 3)
         )
 
-        for layer in vgg.layers:
+        for layer in vgg.layers[-2]:
             layer.trainable = False
 
-        x = vgg.get_layer('block4_pool').output
+        x = vgg.output
 
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(128, (self.image_shape[0] // 16, self.image_shape[1] // 16), padding='valid',

@@ -100,7 +100,7 @@ class BatchIterator(object):
         batch_pairs = self.worker_pool.map(
             self.generator.generate, batch_metrics)
         images, metrics = zip(*batch_pairs)
-        return np.array(images), np.array(metrics)
+        return preprocess_input(np.array(images)), np.array(metrics)
 
 
 class threadsafe_iter(object):
@@ -222,9 +222,8 @@ class CrossingGuide(object):
         self.load_data()
         logname = '-'.join(['dr' + str(self.dropout_rate),
                             'lpf' + str(self.use_lpf),
-                            'ep' +
-                            str(num_epoch), activations.serialize(
-                                self.activation),
+                            'ep' + str(num_epoch),
+                            activations.serialize(self.activation),
                             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
         tfboard = TensorBoard('./logs/' + logname,

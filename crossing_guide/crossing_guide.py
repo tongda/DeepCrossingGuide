@@ -100,7 +100,7 @@ class BatchIterator(object):
         batch_pairs = self.worker_pool.map(
             self.generator.generate, batch_metrics)
         images, metrics = zip(*batch_pairs)
-        return preprocess_input(np.array(images)), np.array(metrics)
+        return preprocess_input(np.array(images, dtype=np.float32)), np.array(metrics)
 
 
 class threadsafe_iter(object):

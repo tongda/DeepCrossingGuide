@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from keras import activations
+from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.vgg16 import VGG16, preprocess_input
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
@@ -255,10 +256,10 @@ class CrossingGuideV2(CrossingGuide):
             include_top=False,
             weights='imagenet',
             input_tensor=None,
-            input_shape=(288, 352, 3)
+            input_shape=self.image_shape
         )
 
-        for layer in vgg.layers[:-2]:
+        for layer in vgg.layers[:-4]:
             layer.trainable = False
 
         x = vgg.output
@@ -278,3 +279,46 @@ class CrossingGuideV2(CrossingGuide):
         model.compile(loss='mse', optimizer='adam')
 
         return model
+
+
+class CrossingGuideV3(CrossingGuide):
+    def __init__(self, *args, **kwargs):
+        super(CrossingGuideV3, self).__init__(*args, **kwargs)
+
+    def build_model(self):
+        vgg = VGG16(
+            include_top=False,
+            weights='imagenet',
+            input_tensor=None,
+            input_shape=self.image_shape
+        )
+
+        for layer in vgg.layers[:-4]:
+            layer.trainable = False
+
+        x = vgg.output
+
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(128, (self.image_shape[0] // 32, self.image_shape[1] // 32), padding='valid',
+                   activation=self.activation, kernel_initializer='glorot_normal')(x)
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(64, (1, 1), padding='valid',
+                   activation=self.activation, kernel_initializer='glorot_normal')(x)
+        x = Dropout(self.dropout_rate)(x)
+        x = Conv2D(16, (1, 1), padding='valid',
+                   activation='softmax', kernel_initializer='glorot_normal')(x)
+        x = Flatten()(x)
+
+        model = Model(inputs=vgg.input, outputs=x)
+        model.compile(loss='categorical_crossentropy',
+                      optimizer='adam', metrics=['accuracy'])
+
+        return model
+
+    def load_data(self, need_shuffle=True):
+        generator = ImageDataGenerator(preprocessing_function=lambda x: np.reshape(preprocess_input(np.expand_dims(x, 0)), self.image_shape))
+        num_samples = len(list(Path(self.data_dir).rglob("*.jpg")))
+        self._train_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
+        self._train_size = num_samples
+        self._valid_data_generator = generator.flow_from_directory(self.data_dir)
+        self._valid_size = num_samples

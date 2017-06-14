@@ -1,5 +1,5 @@
 import tensorflow as tf
-from crossing_guide import CrossingGuideV2
+from crossing_guide import CrossingGuideV3
 
 flags = tf.flags
 logging = tf.logging
@@ -30,7 +30,7 @@ def main(_):
     print(FLAGS.__dict__['__flags'])
     image_shape = (352, 288, 3) if FLAGS.orientation == "portrait" else (
         288, 352, 3)
-    guide = CrossingGuideV2(data_dir=FLAGS.data_dir,
+    guide = CrossingGuideV3(data_dir=FLAGS.data_dir,
                             save_path=FLAGS.save_path,
                             use_lpf=FLAGS.use_lpf,
                             batch_size=FLAGS.batch_size,

@@ -12,7 +12,7 @@ import numpy as np
 import tensorflow as tf
 from keras import activations
 from keras.preprocessing.image import ImageDataGenerator
-from keras.applications.vgg16 import VGG16, preprocess_input
+from keras.applications.vgg16 import VGG16
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
                           Dropout, Flatten, Lambda, MaxPooling2D)
@@ -281,6 +281,15 @@ class CrossingGuideV2(CrossingGuide):
         return model
 
 
+def preprocess_input(x):
+    x = x[:, :, ::-1]
+    # Zero-center by mean pixel
+    x[:, :, 0] -= 103.939
+    x[:, :, 1] -= 116.779
+    x[:, :, 2] -= 123.68
+    return x
+
+
 class CrossingGuideV3(CrossingGuide):
     def __init__(self, *args, **kwargs):
         super(CrossingGuideV3, self).__init__(*args, **kwargs)
@@ -316,7 +325,7 @@ class CrossingGuideV3(CrossingGuide):
         return model
 
     def load_data(self, need_shuffle=True):
-        generator = ImageDataGenerator(preprocessing_function=lambda x: np.reshape(preprocess_input(np.expand_dims(x, 0)), self.image_shape))
+        generator = ImageDataGenerator(preprocessing_function=preprocess_input)
         num_samples = len(list(Path(self.data_dir).rglob("*.jpg")))
         self._train_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
         self._train_size = num_samples

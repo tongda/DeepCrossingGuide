@@ -329,5 +329,5 @@ class CrossingGuideV3(CrossingGuide):
         num_samples = len(list(Path(self.data_dir).rglob("*.jpg")))
         self._train_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
         self._train_size = num_samples
-        self._valid_data_generator = generator.flow_from_directory(self.data_dir)
+        self._valid_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
         self._valid_size = num_samples

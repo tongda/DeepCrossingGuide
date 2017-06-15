@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from keras import activations
+from keras.metrics import top_k_categorical_accuracy
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.vgg16 import VGG16
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
@@ -235,6 +236,7 @@ class CrossingGuide(object):
             validation_steps=self._valid_size / self.batch_size,
             epochs=num_epoch, verbose=True,
             workers=10,
+            # class_weights={},
             callbacks=[tfboard],
             max_q_size=200)
 
@@ -318,9 +320,12 @@ class CrossingGuideV3(CrossingGuide):
                    activation='softmax', kernel_initializer='glorot_normal')(x)
         x = Flatten()(x)
 
+        top3_acc = functools.partial(top_k_categorical_accuracy, k=3)
+        top3_acc.__name__ = 'top3_acc'
+
         model = Model(inputs=vgg.input, outputs=x)
         model.compile(loss='categorical_crossentropy',
-                      optimizer='adam', metrics=['accuracy'])
+                      optimizer='adam', metrics=['accuracy', top3_acc])
 
         return model
 

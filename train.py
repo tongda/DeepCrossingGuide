@@ -36,7 +36,7 @@ def main(_):
                             batch_size=FLAGS.batch_size,
                             all_feat=FLAGS.all_feat,
                             piece_file=FLAGS.piece_file,
-                            activation='tanh',
+                            activation='relu',
                             process_pool_size=FLAGS.process_pool_size,
                             image_shape=image_shape)
     guide.train(FLAGS.num_epoch)

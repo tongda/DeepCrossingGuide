@@ -15,7 +15,7 @@ python preprocess.py --root ./data-landscape --output landscape.csv
 ### Train
 
 ```bash
-python train.py --data_dir=./data-landscape --save_path=model-land-part-feat-0614.h5 --use_lpf=False --batch_size=64 --num_epoch=30 --all_feat=False --piece_file=./landscape.csv --process_pool_size=10 --orientation=landscape
+python train.py --data_dir=./categorized --save_path=model-land-part-feat-0615.h5 --use_lpf=False --batch_size=64 --num_epoch=30 --all_feat=False --piece_file=./landscape.csv --process_pool_size=10 --orientation=landscape
 ```
 
 ### Export model

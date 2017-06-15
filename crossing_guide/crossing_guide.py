@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 from keras import activations
+from keras.activations import relu
 from keras.metrics import top_k_categorical_accuracy
 from keras.preprocessing.image import ImageDataGenerator
 from keras.applications.vgg16 import VGG16

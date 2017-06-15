@@ -25,6 +25,26 @@ from sklearn.utils import shuffle
 from .util import read_image, read_metrics
 
 
+CLASS_WEIGHT = {
+    0: 8,
+    1: 8,
+    2: 6,
+    3: 3,
+    4: 2,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+    10: 2,
+    11: 3,
+    12: 6,
+    13: 8,
+    14: 8,
+    15: 3
+}
+
+
 def feat_size(all_feat=True):
     if all_feat:
         return 12
@@ -237,7 +257,7 @@ class CrossingGuide(object):
             validation_steps=self._valid_size / self.batch_size,
             epochs=num_epoch, verbose=True,
             workers=10,
-            # class_weights={},
+            class_weight=CLASS_WEIGHT,
             callbacks=[tfboard],
             max_q_size=200)
 

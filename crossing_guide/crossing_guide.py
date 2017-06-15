@@ -309,12 +309,15 @@ class CrossingGuideV3(CrossingGuide):
 
         x = vgg.output
 
+        lrelu = functools.partial(relu, alpha=0.1)
+        lrelu.__name__ = 'lrelu'
+
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(128, (self.image_shape[0] // 32, self.image_shape[1] // 32), padding='valid',
-                   activation=self.activation, kernel_initializer='glorot_normal')(x)
+                   activation=lrelu, kernel_initializer='glorot_normal')(x)
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(64, (1, 1), padding='valid',
-                   activation=self.activation, kernel_initializer='glorot_normal')(x)
+                   activation=lrelu, kernel_initializer='glorot_normal')(x)
         x = Dropout(self.dropout_rate)(x)
         x = Conv2D(16, (1, 1), padding='valid',
                    activation='softmax', kernel_initializer='glorot_normal')(x)

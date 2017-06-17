@@ -18,7 +18,7 @@ from keras.applications.vgg16 import VGG16
 from keras.callbacks import Callback, ProgbarLogger, TensorBoard
 from keras.layers import (BatchNormalization, Conv2D, Cropping2D, Dense,
                           Dropout, Flatten, Lambda, MaxPooling2D)
-from keras.models import Model, load_model
+from keras.models import Sequential, Model, load_model
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
@@ -250,7 +250,9 @@ class CrossingGuide(object):
                             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
         tfboard = TensorBoard('./logs/' + logname,
-                              histogram_freq=1, write_graph=True)
+                              histogram_freq=1,
+                              write_graph=True,
+                              write_grads=False,)
         self.model.fit_generator(
             self._train_data_generator, steps_per_epoch=self._train_size / self.batch_size,
             validation_data=self._valid_data_generator,
@@ -264,7 +266,15 @@ class CrossingGuide(object):
         self.model.save(self.save_path)
 
     def load(self):
-        self.model = load_model(self.save_path)
+
+        lrelu = functools.partial(relu, alpha=0.1)
+        lrelu.__name__ = 'lrelu'
+
+        top3_acc = functools.partial(top_k_categorical_accuracy, k=3)
+        top3_acc.__name__ = 'top3_acc'
+
+        self.model = load_model(self.save_path, custom_objects={
+                                'lrelu': lrelu, 'top3_acc': top3_acc})
 
     def predict(self, image):
         return self.model.predict(np.expand_dims(image, 0), batch_size=1)
@@ -356,7 +366,9 @@ class CrossingGuideV3(CrossingGuide):
     def load_data(self, need_shuffle=True):
         generator = ImageDataGenerator(preprocessing_function=preprocess_input)
         num_samples = len(list(Path(self.data_dir).rglob("*.jpg")))
-        self._train_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
+        self._train_data_generator = generator.flow_from_directory(
+            self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
         self._train_size = num_samples
-        self._valid_data_generator = generator.flow_from_directory(self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
+        self._valid_data_generator = generator.flow_from_directory(
+            self.data_dir, target_size=self.image_shape[:2], batch_size=self.batch_size)
         self._valid_size = num_samples

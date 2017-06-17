@@ -252,7 +252,7 @@ class CrossingGuide(object):
         tfboard = TensorBoard('./logs/' + logname,
                               histogram_freq=1,
                               write_graph=True,
-                              write_grads=False,)
+                              write_grads=True)
         self.model.fit_generator(
             self._train_data_generator, steps_per_epoch=self._train_size / self.batch_size,
             validation_data=self._valid_data_generator,
